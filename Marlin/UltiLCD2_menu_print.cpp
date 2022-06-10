@@ -142,18 +142,18 @@ static void doStartPrint()
         {
             // move to priming height
             current_position[Z_AXIS] = PRIMING_HEIGHT;
-            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS], active_extruder);
+            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS], active_extruder);
             // note that we have primed, so that we know to de-prime at the end
             primed = true;
         }
 
         // undo the end-of-print retraction
         plan_set_e_position((0.0 - END_OF_PRINT_RETRACTION) / volume_to_filament_length[e]);
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], END_OF_PRINT_RECOVERY_SPEED, e);
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS], END_OF_PRINT_RECOVERY_SPEED, e);
 
         // perform additional priming
         plan_set_e_position(-PRIMING_MM3);
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], (PRIMING_MM3_PER_SEC * volume_to_filament_length[e]), e);
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS], (PRIMING_MM3_PER_SEC * volume_to_filament_length[e]), e);
 
 #if EXTRUDERS > 1
         // for extruders other than the first one, perform end of print retraction

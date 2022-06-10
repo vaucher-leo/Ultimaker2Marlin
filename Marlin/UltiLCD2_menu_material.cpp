@@ -136,7 +136,7 @@ static void lcd_menu_change_material_preheat()
 
             // Do a forward push before pulling back the material, reducing blobs at the end of the filament.
             plan_set_e_position(0);
-            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], 20.0 / volume_to_filament_length[active_extruder], retract_feedrate/60.0, active_extruder);
+            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], 20.0 / volume_to_filament_length[active_extruder], retract_feedrate/60.0, active_extruder);
 
             float old_max_feedrate_e = max_feedrate[E_AXIS];
             float old_retract_acceleration = retract_acceleration;
@@ -144,8 +144,8 @@ static void lcd_menu_change_material_preheat()
             retract_acceleration = FILAMENT_LONG_MOVE_ACCELERATION;
 
             plan_set_e_position(0);
-            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], -1.0 / volume_to_filament_length[active_extruder], FILAMENT_REVERSAL_SPEED, active_extruder);
-            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], -FILAMENT_REVERSAL_LENGTH / volume_to_filament_length[active_extruder], FILAMENT_REVERSAL_SPEED, active_extruder);
+            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], -1.0 / volume_to_filament_length[active_extruder], FILAMENT_REVERSAL_SPEED, active_extruder);
+            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], -FILAMENT_REVERSAL_LENGTH / volume_to_filament_length[active_extruder], FILAMENT_REVERSAL_SPEED, active_extruder);
 
             max_feedrate[E_AXIS] = old_max_feedrate_e;
             retract_acceleration = old_retract_acceleration;
@@ -310,7 +310,7 @@ static void lcd_menu_change_material_insert_wait_user()
     if (printing_state == PRINT_STATE_NORMAL && movesplanned() < 2)
     {
         plan_set_e_position(0);
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], 0.5 / volume_to_filament_length[active_extruder], FILAMENT_INSERT_SPEED, active_extruder);
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], 0.5 / volume_to_filament_length[active_extruder], FILAMENT_INSERT_SPEED, active_extruder);
     }
 
     lcd_question_screen(NULL, lcd_menu_change_material_insert_wait_user_ready, PSTR("READY"), post_change_material_menu, cancelMaterialInsert, PSTR("CANCEL"));
@@ -330,7 +330,7 @@ static void lcd_menu_change_material_insert_wait_user_ready()
     retract_acceleration = FILAMENT_LONG_MOVE_ACCELERATION;
 
     plan_set_e_position(0);
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], FILAMENT_FORWARD_LENGTH / volume_to_filament_length[active_extruder], FILAMENT_INSERT_FAST_SPEED, active_extruder);
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], FILAMENT_FORWARD_LENGTH / volume_to_filament_length[active_extruder], FILAMENT_INSERT_FAST_SPEED, active_extruder);
 
     // Put back original values.
     max_feedrate[E_AXIS] = old_max_feedrate_e;
@@ -365,7 +365,7 @@ static void lcd_menu_change_material_insert_forward()
 static void materialInsertReady()
 {
     plan_set_e_position(0);
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], -END_OF_PRINT_RETRACTION / volume_to_filament_length[active_extruder], 25*60, active_extruder);
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], -END_OF_PRINT_RETRACTION / volume_to_filament_length[active_extruder], 25*60, active_extruder);
     cancelMaterialInsert();
 }
 
@@ -380,7 +380,7 @@ static void lcd_menu_change_material_insert()
     if (movesplanned() < 2)
     {
         plan_set_e_position(0);
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], 0.5 / volume_to_filament_length[active_extruder], FILAMENT_INSERT_EXTRUDE_SPEED, active_extruder);
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], 0.5 / volume_to_filament_length[active_extruder], FILAMENT_INSERT_EXTRUDE_SPEED, active_extruder);
     }
 
     lcd_lib_update_screen();

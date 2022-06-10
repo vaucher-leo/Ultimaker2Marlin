@@ -189,7 +189,8 @@ void lcd_menu_startup()
 #else
         if (!IS_FIRST_RUN_DONE())
         {
-            currentMenu = lcd_menu_first_run_init;
+            //currentMenu = lcd_menu_first_run_init;
+            currentMenu = lcd_menu_main;
         }else{
             currentMenu = lcd_menu_main;
         }

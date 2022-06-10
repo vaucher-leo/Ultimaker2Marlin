@@ -51,6 +51,8 @@ static unsigned char out_bits;        // The next stepping-bits to be output
 static long counter_x,       // Counter variables for the bresenham line tracer
             counter_y,
             counter_z,
+            counter_a,
+            counter_c,
             counter_e;
 volatile static unsigned long step_events_completed; // The number of step events executed in the current block
 #ifdef ADVANCE
@@ -65,11 +67,13 @@ static uint8_t step_loops;
 static uint8_t step_loops_nominal;
 static unsigned short OCR1A_nominal;
 
-volatile long endstops_trigsteps[3]={0,0,0};
+volatile long endstops_trigsteps[5]={0,0,0,0,0};
 volatile long endstops_stepsTotal,endstops_stepsDone;
 static volatile bool endstop_x_hit=false;
 static volatile bool endstop_y_hit=false;
 static volatile bool endstop_z_hit=false;
+static volatile bool endstop_a_hit=false;
+static volatile bool endstop_c_hit=false;
 #ifdef ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED
 bool abort_on_endstop_hit = false;
 #endif
@@ -83,11 +87,15 @@ static bool old_y_min_endstop=false;
 static bool old_y_max_endstop=false;
 static bool old_z_min_endstop=false;
 static bool old_z_max_endstop=false;
+static bool old_a_min_endstop=false;
+static bool old_a_max_endstop=false;
+static bool old_c_min_endstop=false;
+static bool old_c_max_endstop=false;
 
 static bool check_endstops = true;
 
-volatile long count_position[NUM_AXIS] = { 0, 0, 0, 0};
-volatile signed char count_direction[NUM_AXIS] = { 1, 1, 1, 1};
+volatile long count_position[NUM_AXIS] = { 0, 0, 0, 0, 0,0 };
+volatile signed char count_direction[NUM_AXIS] = { 1, 1, 1, 1, 1, 1};
 
 //===========================================================================
 //=============================functions         ============================
@@ -207,10 +215,20 @@ void checkHitEndstops()
      SERIAL_ECHOPAIR(" Z:",(float)endstops_trigsteps[Z_AXIS]/axis_steps_per_unit[Z_AXIS]);
      LCD_MESSAGEPGM(MSG_ENDSTOPS_HIT "Z");
    }
+   if(endstop_a_hit) {
+     SERIAL_ECHOPAIR(" A:",(float)endstops_trigsteps[A_AXIS]/axis_steps_per_unit[A_AXIS]);
+     LCD_MESSAGEPGM(MSG_ENDSTOPS_HIT "Z");
+   }
+   if(endstop_c_hit) {
+     SERIAL_ECHOPAIR(" C:",(float)endstops_trigsteps[C_AXIS]/axis_steps_per_unit[C_AXIS]);
+     LCD_MESSAGEPGM(MSG_ENDSTOPS_HIT "Z");
+   }
    SERIAL_ECHOLN("");
    endstop_x_hit=false;
    endstop_y_hit=false;
    endstop_z_hit=false;
+   endstop_a_hit=false;
+   endstop_c_hit=false;
 #ifdef ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED
    if (abort_on_endstop_hit)
    {
@@ -235,6 +253,8 @@ void endstops_hit_on_purpose()
   endstop_x_hit=false;
   endstop_y_hit=false;
   endstop_z_hit=false;
+  endstop_a_hit=false;
+  endstop_c_hit=false;
 }
 
 void enable_endstops(bool check)
@@ -353,6 +373,8 @@ ISR(TIMER1_COMPA_vect)
       counter_x = -(current_block->step_event_count >> 1);
       counter_y = counter_x;
       counter_z = counter_x;
+      counter_a = counter_x;
+      counter_c = counter_x;
       counter_e = counter_x;
       step_events_completed = 0;
 
@@ -394,6 +416,22 @@ ISR(TIMER1_COMPA_vect)
     else{
       WRITE(Y_DIR_PIN, !INVERT_Y_DIR);
       count_direction[Y_AXIS]=1;
+    }
+    if((out_bits & (1<<A_AXIS))!=0){
+      WRITE(A_DIR_PIN, INVERT_A_DIR);
+      count_direction[A_AXIS]=-1;
+    }
+    else{
+      WRITE(A_DIR_PIN, !INVERT_A_DIR);
+      count_direction[A_AXIS]=1;
+    }
+    if((out_bits & (1<<C_AXIS))!=0){
+      WRITE(C_DIR_PIN, INVERT_C_DIR);
+      count_direction[C_AXIS]=-1;
+    }
+    else{
+      WRITE(C_DIR_PIN, !INVERT_C_DIR);
+      count_direction[C_AXIS]=1;
     }
 
     // Set direction en check limit switches
@@ -551,6 +589,22 @@ ISR(TIMER1_COMPA_vect)
           counter_y -= current_block->step_event_count;
           count_position[Y_AXIS]+=count_direction[Y_AXIS];
           WRITE(Y_STEP_PIN, INVERT_Y_STEP_PIN);
+        }
+
+        counter_a += current_block->steps_a;
+        if (counter_a > 0) {
+          WRITE(A_STEP_PIN, !INVERT_A_STEP_PIN);
+          counter_a -= current_block->step_event_count;
+          count_position[A_AXIS]+=count_direction[A_AXIS];
+          WRITE(A_STEP_PIN, INVERT_A_STEP_PIN);
+        }
+
+        counter_c += current_block->steps_c;
+        if (counter_c > 0) {
+          WRITE(C_STEP_PIN, !INVERT_C_STEP_PIN);
+          counter_c -= current_block->step_event_count;
+          count_position[C_AXIS]+=count_direction[C_AXIS];
+          WRITE(C_STEP_PIN, INVERT_C_STEP_PIN);
         }
 
       counter_z += current_block->steps_z;
@@ -731,6 +785,12 @@ void st_init()
       SET_OUTPUT(Z2_DIR_PIN);
     #endif
   #endif
+  #if defined(A_DIR_PIN) && A_DIR_PIN > -1
+    SET_OUTPUT(A_DIR_PIN);
+  #endif
+  #if defined(C_DIR_PIN) && C_DIR_PIN > -1
+    SET_OUTPUT(C_DIR_PIN);
+  #endif
   #if defined(E0_DIR_PIN) && E0_DIR_PIN > -1
     SET_OUTPUT(E0_DIR_PIN);
   #endif
@@ -759,6 +819,14 @@ void st_init()
       SET_OUTPUT(Z2_ENABLE_PIN);
       if(!Z_ENABLE_ON) WRITE(Z2_ENABLE_PIN,HIGH);
     #endif
+  #endif
+  #if defined(A_ENABLE_PIN) && A_ENABLE_PIN > -1
+    SET_OUTPUT(A_ENABLE_PIN);
+    if(!A_ENABLE_ON) WRITE(A_ENABLE_PIN,HIGH);
+  #endif
+  #if defined(C_ENABLE_PIN) && C_ENABLE_PIN > -1
+    SET_OUTPUT(C_ENABLE_PIN);
+    if(!C_ENABLE_ON) WRITE(C_ENABLE_PIN,HIGH);
   #endif
   #if defined(E0_ENABLE_PIN) && (E0_ENABLE_PIN > -1)
     SET_OUTPUT(E0_ENABLE_PIN);
@@ -796,6 +864,20 @@ void st_init()
     #endif
   #endif
 
+  #if defined(A_MIN_PIN) && A_MIN_PIN > -1
+    SET_INPUT(A_MIN_PIN);
+    #ifdef ENDSTOPPULLUP_AMIN
+      WRITE(A_MIN_PIN,HIGH);
+    #endif
+  #endif
+
+  #if defined(C_MIN_PIN) && C_MIN_PIN > -1
+    SET_INPUT(C_MIN_PIN);
+    #ifdef ENDSTOPPULLUP_CMIN
+      WRITE(C_MIN_PIN,HIGH);
+    #endif
+  #endif
+
   #if defined(X_MAX_PIN) && X_MAX_PIN > -1
     SET_INPUT(X_MAX_PIN);
     #ifdef ENDSTOPPULLUP_XMAX
@@ -814,6 +896,20 @@ void st_init()
     SET_INPUT(Z_MAX_PIN);
     #ifdef ENDSTOPPULLUP_ZMAX
       WRITE(Z_MAX_PIN,HIGH);
+    #endif
+  #endif
+
+  #if defined(A_MAX_PIN) && A_MAX_PIN > -1
+    SET_INPUT(A_MAX_PIN);
+    #ifdef ENDSTOPPULLUP_AMAX
+      WRITE(A_MAX_PIN,HIGH);
+    #endif
+  #endif
+
+  #if defined(C_MAX_PIN) && C_MAX_PIN > -1
+    SET_INPUT(C_MAX_PIN);
+    #ifdef ENDSTOPPULLUP_CMAX
+      WRITE(C_MAX_PIN,HIGH);
     #endif
   #endif
 
@@ -837,6 +933,16 @@ void st_init()
       WRITE(Z2_STEP_PIN,INVERT_Z_STEP_PIN);
     #endif
     disable_z();
+  #endif
+  #if defined(A_STEP_PIN) && (A_STEP_PIN > -1)
+    SET_OUTPUT(A_STEP_PIN);
+    WRITE(A_STEP_PIN,INVERT_A_STEP_PIN);
+    disable_a();
+  #endif
+  #if defined(C_STEP_PIN) && (C_STEP_PIN > -1)
+    SET_OUTPUT(C_STEP_PIN);
+    WRITE(C_STEP_PIN,INVERT_C_STEP_PIN);
+    disable_c();
   #endif
   #if defined(E0_STEP_PIN) && (E0_STEP_PIN > -1)
     SET_OUTPUT(E0_STEP_PIN);
@@ -906,12 +1012,14 @@ void st_synchronize()
 /**
  * Set the stepper positions directly in steps
  */
-void st_set_position(const long &x, const long &y, const long &z, const long &e)
+void st_set_position(const long &x, const long &y, const long &z, const long &a, const long &c, const long &e)
 {
   CRITICAL_SECTION_START;
   count_position[X_AXIS] = x;
   count_position[Y_AXIS] = y;
   count_position[Z_AXIS] = z;
+  count_position[A_AXIS] = a;
+  count_position[C_AXIS] = c;
   count_position[E_AXIS] = e;
   CRITICAL_SECTION_END;
 }
@@ -940,6 +1048,8 @@ void finishAndDisableSteppers()
   disable_x();
   disable_y();
   disable_z();
+  disable_a();
+  disable_c();
   disable_e0();
   disable_e1();
   disable_e2();
@@ -956,8 +1066,10 @@ void quickStop()
   current_position[X_AXIS] = float(st_get_position(X_AXIS)) / axis_steps_per_unit[X_AXIS];
   current_position[Y_AXIS] = float(st_get_position(Y_AXIS)) / axis_steps_per_unit[Y_AXIS];
   current_position[Z_AXIS] = float(st_get_position(Z_AXIS)) / axis_steps_per_unit[Z_AXIS];
+  current_position[A_AXIS] = float(st_get_position(A_AXIS)) / axis_steps_per_unit[A_AXIS];
+  current_position[C_AXIS] = float(st_get_position(C_AXIS)) / axis_steps_per_unit[C_AXIS];
   current_position[E_AXIS] = (float(st_get_position(E_AXIS))/ axis_steps_per_unit[E_AXIS]) / volume_to_filament_length[active_extruder];
-  plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+  plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS]);
 }
 
 void digitalPotWrite(int address, int value) // From Arduino DigitalPotControl example
@@ -1014,6 +1126,8 @@ void microstep_init()
   pinMode(X_MS2_PIN,OUTPUT);
   pinMode(Y_MS2_PIN,OUTPUT);
   pinMode(Z_MS2_PIN,OUTPUT);
+  pinMode(A_MS2_PIN,OUTPUT);
+  pinMode(C_MS2_PIN,OUTPUT);
   pinMode(E0_MS2_PIN,OUTPUT);
   pinMode(E1_MS2_PIN,OUTPUT);
   for(int i=0;i<=4;i++) microstep_mode(i,microstep_modes[i]);
@@ -1027,16 +1141,20 @@ void microstep_ms(uint8_t driver, int8_t ms1, int8_t ms2)
     case 0: digitalWrite( X_MS1_PIN,ms1); break;
     case 1: digitalWrite( Y_MS1_PIN,ms1); break;
     case 2: digitalWrite( Z_MS1_PIN,ms1); break;
-    case 3: digitalWrite(E0_MS1_PIN,ms1); break;
-    case 4: digitalWrite(E1_MS1_PIN,ms1); break;
+    case 3: digitalWrite( A_MS1_PIN,ms1); break;
+    case 4: digitalWrite( C_MS1_PIN,ms1); break;
+    case 5: digitalWrite(E0_MS1_PIN,ms1); break;
+    case 6: digitalWrite(E1_MS1_PIN,ms1); break;
   }
   if(ms2 > -1) switch(driver)
   {
     case 0: digitalWrite( X_MS2_PIN,ms2); break;
     case 1: digitalWrite( Y_MS2_PIN,ms2); break;
     case 2: digitalWrite( Z_MS2_PIN,ms2); break;
-    case 3: digitalWrite(E0_MS2_PIN,ms2); break;
-    case 4: digitalWrite(E1_MS2_PIN,ms2); break;
+    case 3: digitalWrite( A_MS2_PIN,ms2); break;
+    case 4: digitalWrite( C_MS2_PIN,ms2); break;
+    case 5: digitalWrite(E0_MS2_PIN,ms2); break;
+    case 6: digitalWrite(E1_MS2_PIN,ms2); break;
   }
 }
 
@@ -1064,6 +1182,12 @@ void microstep_readings()
       SERIAL_PROTOCOLPGM("Z: ");
       SERIAL_PROTOCOL(   digitalRead(Z_MS1_PIN));
       SERIAL_PROTOCOLLN( digitalRead(Z_MS2_PIN));
+      SERIAL_PROTOCOLPGM("A: ");
+      SERIAL_PROTOCOL(   digitalRead(A_MS1_PIN));
+      SERIAL_PROTOCOLLN( digitalRead(A_MS2_PIN));
+      SERIAL_PROTOCOLPGM("C: ");
+      SERIAL_PROTOCOL(   digitalRead(C_MS1_PIN));
+      SERIAL_PROTOCOLLN( digitalRead(C_MS2_PIN));
       SERIAL_PROTOCOLPGM("E0: ");
       SERIAL_PROTOCOL(   digitalRead(E0_MS1_PIN));
       SERIAL_PROTOCOLLN( digitalRead(E0_MS2_PIN));

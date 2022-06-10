@@ -123,7 +123,7 @@ static void parkHeadForLeftAdjustment()
 {
     add_homing[Z_AXIS] -= current_position[Z_AXIS];
     current_position[Z_AXIS] = 0;
-    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS]);
 
     char buffer[32];
     sprintf_P(buffer, PSTR("G1 F%i Z5"), int(homing_feedrate[Z_AXIS]));
@@ -144,7 +144,7 @@ static void lcd_menu_first_run_bed_level_center_adjust()
     if (printing_state == PRINT_STATE_NORMAL && lcd_lib_encoder_pos != 0 && movesplanned() < 4)
     {
         current_position[Z_AXIS] -= float(lcd_lib_encoder_pos) * 0.05;
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 60, 0);
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS], 60, 0);
     }
     lcd_lib_encoder_pos = 0;
 
@@ -234,7 +234,7 @@ static void lcd_menu_first_run_bed_level_paper_center()
     {
         current_position[Z_AXIS] -= float(lcd_lib_encoder_pos) * 0.05;
         lcd_lib_encoder_pos = 0;
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 60, 0);
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS], 60, 0);
     }
 
     if (movesplanned() > 0)
@@ -424,7 +424,7 @@ static void runMaterialForward()
     current_position[E_AXIS] = 0;
     plan_set_e_position(current_position[E_AXIS]);
     current_position[E_AXIS] = FILAMENT_FORWARD_LENGTH;
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], FILAMENT_INSERT_FAST_SPEED, 0);
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS], FILAMENT_INSERT_FAST_SPEED, 0);
 
     // Put back original values.
     max_feedrate[E_AXIS] = old_max_feedrate_e;
@@ -438,7 +438,7 @@ static void lcd_menu_first_run_material_load_insert()
     if (movesplanned() < 2)
     {
         current_position[E_AXIS] += 0.5;
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], FILAMENT_INSERT_SPEED, 0);
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS], FILAMENT_INSERT_SPEED, 0);
     }
 
     SELECT_MAIN_MENU_ITEM(0);
@@ -487,7 +487,7 @@ static void lcd_menu_first_run_material_load_wait()
     if (movesplanned() < 2)
     {
         current_position[E_AXIS] += 0.5;
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], FILAMENT_INSERT_EXTRUDE_SPEED, 0);
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS], FILAMENT_INSERT_EXTRUDE_SPEED, 0);
     }
 
     lcd_lib_update_screen();

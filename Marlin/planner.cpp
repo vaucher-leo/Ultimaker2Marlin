@@ -417,7 +417,9 @@ void getHighESpeed()
   while(block_index != block_buffer_head) {
     if((block_buffer[block_index].steps_x != 0) ||
       (block_buffer[block_index].steps_y != 0) ||
-      (block_buffer[block_index].steps_z != 0)) {
+      (block_buffer[block_index].steps_z != 0) || 
+      (block_buffer[block_index].steps_a != 0) ||
+      (block_buffer[block_index].steps_c != 0)) {
       float se=(float(block_buffer[block_index].steps_e)/float(block_buffer[block_index].step_event_count))*block_buffer[block_index].nominal_speed;
       //se; mm/sec;
       if(se>high)
@@ -448,6 +450,8 @@ void check_axes_activity()
   unsigned char x_active = 0;
   unsigned char y_active = 0;
   unsigned char z_active = 0;
+  unsigned char a_active = 0;
+  unsigned char c_active = 0;
   unsigned char e_active = 0;
   unsigned char tail_fan_speed = fanSpeed;
   #ifdef BARICUDA
@@ -470,6 +474,8 @@ void check_axes_activity()
       if(block->steps_x != 0) x_active++;
       if(block->steps_y != 0) y_active++;
       if(block->steps_z != 0) z_active++;
+      if(block->steps_a != 0) a_active++;
+      if(block->steps_c != 0) c_active++;
       if(block->steps_e != 0) e_active++;
       block_index = (block_index+1) & (BLOCK_BUFFER_SIZE - 1);
     }
@@ -477,6 +483,8 @@ void check_axes_activity()
   if((DISABLE_X) && (x_active == 0)) disable_x();
   if((DISABLE_Y) && (y_active == 0)) disable_y();
   if((DISABLE_Z) && (z_active == 0)) disable_z();
+  if((DISABLE_A) && (a_active == 0)) disable_a();
+  if((DISABLE_C) && (c_active == 0)) disable_c();
   if((DISABLE_E) && (e_active == 0))
   {
     disable_e0();
@@ -524,7 +532,7 @@ float junction_deviation = 0.1;
 
 // Add a new linear movement to the buffer.
 // x, y, z and e are the absolute positions in mm.
-void plan_buffer_line(const float &x, const float &y, const float &z, const float &e, float feed_rate, const uint8_t &extruder)
+void plan_buffer_line(const float &x, const float &y, const float &z, const float &a, const float &c, const float &e, float feed_rate, const uint8_t &extruder)
 {
   // Calculate the buffer head after we push this byte
   uint8_t next_buffer_head = next_block_index(block_buffer_head);
@@ -546,6 +554,8 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
   target[X_AXIS] = lround(x*axis_steps_per_unit[X_AXIS]);
   target[Y_AXIS] = lround(y*axis_steps_per_unit[Y_AXIS]);
   target[Z_AXIS] = lround(z*axis_steps_per_unit[Z_AXIS]);
+  target[A_AXIS] = lround(a*axis_steps_per_unit[A_AXIS]);
+  target[C_AXIS] = lround(c*axis_steps_per_unit[C_AXIS]);
   target[E_AXIS] = lround(e*axis_steps_per_unit[E_AXIS]*volume_to_filament_length[extruder]);
 
   #ifdef PREVENT_DANGEROUS_EXTRUDE
@@ -586,11 +596,13 @@ block->steps_y = labs(target[Y_AXIS]-position[Y_AXIS]);
 block->steps_x = labs((target[X_AXIS]-position[X_AXIS]) + (target[Y_AXIS]-position[Y_AXIS]));
 block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-position[Y_AXIS]));
 #endif
+  block->steps_a = labs(target[A_AXIS]-position[A_AXIS]);
+  block->steps_c = labs(target[C_AXIS]-position[C_AXIS]);
   block->steps_z = labs(target[Z_AXIS]-position[Z_AXIS]);
   block->steps_e = labs(target[E_AXIS]-position[E_AXIS]);
   block->steps_e *= extrudemultiply[extruder];
   block->steps_e /= 100;
-  block->step_event_count = max(block->steps_x, max(block->steps_y, max(block->steps_z, block->steps_e)));
+  block->step_event_count = max(block->steps_x, max(block->steps_y, max(block->steps_z, max(block->steps_a, max(block->steps_c, block->steps_e)))));
 
   // Bail if this is a zero-length block
   if (block->step_event_count <= dropsegments)
@@ -625,6 +637,14 @@ block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-positi
     block->direction_bits |= (1<<Y_AXIS);
   }
 #endif
+  if (target[A_AXIS] < position[A_AXIS])
+  {
+    block->direction_bits |= (1<<A_AXIS);
+  }
+  if (target[C_AXIS] < position[C_AXIS])
+  {
+    block->direction_bits |= (1<<C_AXIS);
+  }
   if (target[Z_AXIS] < position[Z_AXIS])
   {
     block->direction_bits |= (1<<Z_AXIS);
@@ -647,6 +667,8 @@ block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-positi
   if(block->steps_x != 0) enable_x();
   if(block->steps_y != 0) enable_y();
   #endif
+  if(block->steps_a != 0) enable_a();
+  if(block->steps_c != 0) enable_c();
 #ifndef Z_LATE_ENABLE
   if(block->steps_z != 0) enable_z();
 #endif
@@ -676,15 +698,17 @@ block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-positi
     delta_mm[X_AXIS] = ((target[X_AXIS]-position[X_AXIS]) + (target[Y_AXIS]-position[Y_AXIS]))/axis_steps_per_unit[X_AXIS];
     delta_mm[Y_AXIS] = ((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-position[Y_AXIS]))/axis_steps_per_unit[Y_AXIS];
   #endif
+  delta_mm[A_AXIS] = (target[A_AXIS]-position[A_AXIS])/axis_steps_per_unit[A_AXIS];
+  delta_mm[C_AXIS] = (target[C_AXIS]-position[C_AXIS])/axis_steps_per_unit[C_AXIS];
   delta_mm[Z_AXIS] = (target[Z_AXIS]-position[Z_AXIS])/axis_steps_per_unit[Z_AXIS];
   delta_mm[E_AXIS] = ((target[E_AXIS]-position[E_AXIS])/axis_steps_per_unit[E_AXIS])*float(extrudemultiply[extruder])/100.0;
-  if ( block->steps_x <=dropsegments && block->steps_y <=dropsegments && block->steps_z <=dropsegments )
+  if ( block->steps_x <=dropsegments && block->steps_y <=dropsegments && block->steps_z <=dropsegments && block->steps_a <=dropsegments && block->steps_c <=dropsegments)
   {
     block->millimeters = fabs(delta_mm[E_AXIS]);
   }
   else
   {
-    block->millimeters = sqrt(square(delta_mm[X_AXIS]) + square(delta_mm[Y_AXIS]) + square(delta_mm[Z_AXIS]));
+    block->millimeters = sqrt(square(delta_mm[X_AXIS]) + square(delta_mm[Y_AXIS]) + square(delta_mm[Z_AXIS]) + square(delta_mm[A_AXIS]) + square(delta_mm[C_AXIS]));
   }
   float inverse_millimeters = 1.0/block->millimeters;  // Inverse millimeters to remove multiple divides
 
@@ -776,7 +800,7 @@ block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-positi
 
   // Compute and limit the acceleration rate for the trapezoid generator.
   float steps_per_mm = block->step_event_count/block->millimeters;
-  if(block->steps_x == 0 && block->steps_y == 0 && block->steps_z == 0)
+  if(block->steps_x == 0 && block->steps_y == 0 && block->steps_a == 0 && block->steps_c == 0 && block->steps_z == 0)
   {
     block->acceleration_st = ceil(retract_acceleration * steps_per_mm); // convert to: acceleration steps/sec^2
   }
@@ -788,6 +812,10 @@ block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-positi
       block->acceleration_st = axis_steps_per_sqr_second[X_AXIS];
     if(((float)block->acceleration_st * (float)block->steps_y / (float)block->step_event_count) > axis_steps_per_sqr_second[Y_AXIS])
       block->acceleration_st = axis_steps_per_sqr_second[Y_AXIS];
+    if(((float)block->acceleration_st * (float)block->steps_a / (float)block->step_event_count) > axis_steps_per_sqr_second[A_AXIS])
+      block->acceleration_st = axis_steps_per_sqr_second[A_AXIS];
+    if(((float)block->acceleration_st * (float)block->steps_c / (float)block->step_event_count) > axis_steps_per_sqr_second[C_AXIS])
+      block->acceleration_st = axis_steps_per_sqr_second[C_AXIS];
     if(((float)block->acceleration_st * (float)block->steps_e / (float)block->step_event_count) > axis_steps_per_sqr_second[E_AXIS])
       block->acceleration_st = axis_steps_per_sqr_second[E_AXIS];
     if(((float)block->acceleration_st * (float)block->steps_z / (float)block->step_event_count ) > axis_steps_per_sqr_second[Z_AXIS])
@@ -892,7 +920,7 @@ block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-positi
 
 #ifdef ADVANCE
   // Calculate advance rate
-  if((block->steps_e == 0) || (block->steps_x == 0 && block->steps_y == 0 && block->steps_z == 0)) {
+  if((block->steps_e == 0) || (block->steps_x == 0 && block->steps_y == 0 && block->steps_z == 0 && block->steps_a == 0 && block->steps_c == 0)) {
     block->advance_rate = 0;
     block->advance = 0;
   }
@@ -930,18 +958,22 @@ block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-positi
   st_wake_up();
 }
 
-void plan_set_position(const float &x, const float &y, const float &z, const float &e)
+void plan_set_position(const float &x, const float &y, const float &z, const float &a, const float &c, const float &e)
 {
   position[X_AXIS] = lround(x*axis_steps_per_unit[X_AXIS]);
   position[Y_AXIS] = lround(y*axis_steps_per_unit[Y_AXIS]);
   position[Z_AXIS] = lround(z*axis_steps_per_unit[Z_AXIS]);
+  position[A_AXIS] = lround(a*axis_steps_per_unit[A_AXIS]);
+  position[C_AXIS] = lround(c*axis_steps_per_unit[C_AXIS]);
   position[E_AXIS] = lround(e*axis_steps_per_unit[E_AXIS]*volume_to_filament_length[active_extruder]);
-  st_set_position(position[X_AXIS], position[Y_AXIS], position[Z_AXIS], position[E_AXIS]);
+  st_set_position(position[X_AXIS], position[Y_AXIS], position[Z_AXIS], position[A_AXIS], position[C_AXIS], position[E_AXIS]);
   previous_nominal_speed = 0.0; // Resets planner junction speeds. Assumes start from rest.
   previous_speed[0] = 0.0;
   previous_speed[1] = 0.0;
   previous_speed[2] = 0.0;
   previous_speed[3] = 0.0;
+  previous_speed[4] = 0.0;
+  previous_speed[5] = 0.0;
 }
 
 // e is passed in as VOLUME

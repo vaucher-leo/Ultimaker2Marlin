@@ -121,6 +121,22 @@ void manage_inactivity();
   #define disable_z() ;
 #endif
 
+#if defined(A_ENABLE_PIN) && A_ENABLE_PIN > -1
+  #define  enable_a() WRITE(A_ENABLE_PIN, A_ENABLE_ON)
+  #define disable_a() WRITE(A_ENABLE_PIN,!A_ENABLE_ON)
+#else
+  #define enable_c() ;
+  #define disable_c() ;
+#endif
+
+#if defined(C_ENABLE_PIN) && C_ENABLE_PIN > -1
+  #define  enable_c() WRITE(C_ENABLE_PIN, C_ENABLE_ON)
+  #define disable_c() WRITE(C_ENABLE_PIN,!C_ENABLE_ON)
+#else
+  #define enable_c() ;
+  #define disable_c() ;
+#endif
+
 #if defined(E0_ENABLE_PIN) && (E0_ENABLE_PIN > -1)
   #define enable_e0() WRITE(E0_ENABLE_PIN, E_ENABLE_ON)
   #define disable_e0() WRITE(E0_ENABLE_PIN,!E_ENABLE_ON)
@@ -146,7 +162,7 @@ void manage_inactivity();
 #endif
 
 
-enum AxisEnum {X_AXIS=0, Y_AXIS=1, Z_AXIS=2, E_AXIS=3};
+enum AxisEnum {X_AXIS=0, Y_AXIS=1, Z_AXIS=2, A_AXIS=3, C_AXIS=4, E_AXIS=5};
 
 #ifdef DELTA
 void calculate_delta(float cartesian[3]);
@@ -188,9 +204,9 @@ extern bool axis_relative_modes[];
 extern int feedmultiply;
 extern int extrudemultiply[EXTRUDERS]; // Sets extrude multiply factor (in percent)
 extern float current_position[NUM_AXIS] ;
-extern float add_homing[3];
-extern float min_pos[3];
-extern float max_pos[3];
+extern float add_homing[5];
+extern float min_pos[5];
+extern float max_pos[5];
 extern uint8_t fanSpeed;
 extern uint8_t fanSpeedPercent;
 #ifdef BARICUDA

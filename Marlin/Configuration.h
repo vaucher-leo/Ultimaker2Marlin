@@ -290,15 +290,21 @@
   #define ENDSTOPPULLUP_XMAX
   #define ENDSTOPPULLUP_YMAX
   #define ENDSTOPPULLUP_ZMAX
+  #define ENDSTOPPULLUP_AMAX
+  #define ENDSTOPPULLUP_CMAX
   #define ENDSTOPPULLUP_XMIN
   #define ENDSTOPPULLUP_YMIN
   #define ENDSTOPPULLUP_ZMIN
+  #define ENDSTOPPULLUP_AMIN
+  #define ENDSTOPPULLUP_CMIN
 #endif
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool X_ENDSTOPS_INVERTING = true; // set to true to invert the logic of the endstops.
 const bool Y_ENDSTOPS_INVERTING = true; // set to true to invert the logic of the endstops.
 const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of the endstops.
+const bool A_ENDSTOPS_INVERTING = true; // set to true to invert the logic of the endstops.
+const bool C_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops.
 //#define DISABLE_MAX_ENDSTOPS
 //#define DISABLE_MIN_ENDSTOPS
 
@@ -311,17 +317,23 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define X_ENABLE_ON 0
 #define Y_ENABLE_ON 0
 #define Z_ENABLE_ON 0
+#define A_ENABLE_ON 0
+#define C_ENABLE_ON 0
 #define E_ENABLE_ON 0 // For all extruders
 
 // Disables axis when it's not being used.
 #define DISABLE_X false
 #define DISABLE_Y false
 #define DISABLE_Z false
+#define DISABLE_A false
+#define DISABLE_C false
 #define DISABLE_E false // For all extruders
 
 #define INVERT_X_DIR true     // for Mendel set to false, for Orca set to true
 #define INVERT_Y_DIR false    // for Mendel set to true, for Orca set to false
 #define INVERT_Z_DIR true     // for Mendel set to false, for Orca set to true
+#define INVERT_A_DIR true     // for Mendel set to false, for Orca set to true
+#define INVERT_C_DIR true     // for Mendel set to false, for Orca set to true
 #define INVERT_E0_DIR false   // for direct drive extruder v9 set to true, for geared extruder set to false
 #define INVERT_E1_DIR true    // for direct drive extruder v9 set to true, for geared extruder set to false
 #define INVERT_E2_DIR false   // for direct drive extruder v9 set to true, for geared extruder set to false
@@ -331,6 +343,8 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define X_HOME_DIR -1
 #define Y_HOME_DIR 1
 #define Z_HOME_DIR 1
+#define A_HOME_DIR -1
+#define C_HOME_DIR -1
 
 #define min_software_endstops true // If true, axis won't move to coordinates less than HOME_POS.
 #define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
@@ -339,12 +353,18 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define X_MIN_POS 0
 #define Y_MAX_POS 224.5
 #define Y_MIN_POS 0
-#define Z_MAX_POS 230
+#define Z_MAX_POS 90 //Default 230
 #define Z_MIN_POS 0
+#define A_MAX_POS 90
+#define A_MIN_POS 0
+#define C_MAX_POS 360
+#define C_MIN_POS 0
 
 #define X_MAX_LENGTH (X_MAX_POS - X_MIN_POS)
 #define Y_MAX_LENGTH (Y_MAX_POS - Y_MIN_POS)
 #define Z_MAX_LENGTH (Z_MAX_POS - Z_MIN_POS)
+#define A_MAX_LENGTH (A_MAX_POS - A_MIN_POS)
+#define C_MAX_LENGTH (C_MAX_POS - C_MIN_POS)
 
 // The position of the homing switches
 //#define MANUAL_HOME_POSITIONS  // If defined, MANUAL_*_HOME_POS below will be used
@@ -355,17 +375,19 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define MANUAL_X_HOME_POS 0
 #define MANUAL_Y_HOME_POS 0
 #define MANUAL_Z_HOME_POS 0
+#define MANUAL_A_HOME_POS 0
+#define MANUAL_C_HOME_POS 0
 //#define MANUAL_Z_HOME_POS 402 // For delta: Distance between nozzle and print surface after homing.
 
 //// MOVEMENT SETTINGS
-#define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {100*60, 100*60, 40*60, 0}  // set the homing speeds (mm/min)
+#define NUM_AXIS 6 // The axis order in all axis related arrays is X, Y, Z, A, C, E
+#define HOMING_FEEDRATE {100*60, 100*60, 40*60, 100*60, 100*60, 0}  // set the homing speeds (mm/min)
 
 // default settings
-
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {80.0,80.0,200,282}  // default steps per unit for Ultimaker2
-#define DEFAULT_MAX_FEEDRATE          {300, 300, 40, 45}    // (mm/sec)
-#define DEFAULT_MAX_ACCELERATION      {9000,9000,100,10000} // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+//Pouic: add config
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {80.0,80.0,200,5.0,5.0,282}  // default steps per unit for Ultimaker2
+#define DEFAULT_MAX_FEEDRATE          {300, 300, 40, 100, 100, 45}    // (mm/sec)
+#define DEFAULT_MAX_ACCELERATION      {9000,9000,100,9000,9000,10000} // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
 #define DEFAULT_ACCELERATION          3000      // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  3000      // X, Y, Z and E max acceleration in mm/s^2 for retracts

@@ -7,6 +7,10 @@
 #define Y_MS2_PIN -1
 #define Z_MS1_PIN -1
 #define Z_MS2_PIN -1
+#define A_MS1_PIN -1
+#define A_MS2_PIN -1
+#define C_MS1_PIN -1
+#define C_MS2_PIN -1
 #define E0_MS1_PIN -1
 #define E0_MS2_PIN -1
 #define E1_MS1_PIN -1
@@ -1180,6 +1184,16 @@
 #define Z_STOP_PIN 29
 #define Z_ENABLE_PIN 34
 
+#define A_STEP_PIN 54
+#define A_DIR_PIN 55
+#define A_STOP_PIN 60
+#define A_ENABLE_PIN 56
+
+#define C_STEP_PIN 57
+#define C_DIR_PIN 58
+#define C_STOP_PIN 61
+#define C_ENABLE_PIN 59
+
 #define HEATER_BED_PIN 4
 #define TEMP_BED_PIN 10
 
@@ -1212,6 +1226,7 @@
 #define MAIN_VOLTAGE_MEASURE_PIN 14 //Analogue PIN to measure the main voltage, with a 100k - 4k7 resitor divider.
 
 #undef MOTOR_CURRENT_PWM_XY_PIN
+//#undef MOTOR_CURRENT_PWM_AC_PIN
 #undef MOTOR_CURRENT_PWM_Z_PIN
 #undef MOTOR_CURRENT_PWM_E_PIN
 #define MOTOR_CURRENT_PWM_XY_PIN 44
@@ -2135,6 +2150,26 @@
   #else
     #define Z_MIN_PIN -1
     #define Z_MAX_PIN Z_STOP_PIN
+  #endif
+#endif
+
+#ifdef A_STOP_PIN
+  #if A_HOME_DIR < 0
+    #define A_MIN_PIN A_STOP_PIN
+    #define A_MAX_PIN -1
+  #else
+    #define A_MIN_PIN -1
+    #define A_MAX_PIN A_STOP_PIN
+  #endif
+#endif
+
+#ifdef C_STOP_PIN
+  #if C_HOME_DIR < 0
+    #define C_MIN_PIN C_STOP_PIN
+    #define C_MAX_PIN -1
+  #else
+    #define C_MIN_PIN -1
+    #define C_MAX_PIN C_STOP_PIN
   #endif
 #endif
 

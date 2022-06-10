@@ -30,7 +30,7 @@
 // the source g-code and may never actually be reached if acceleration management is active.
 typedef struct {
   // Fields used by the bresenham algorithm for tracing the line
-  long steps_x, steps_y, steps_z, steps_e;  // Step count along each axis
+  long steps_x, steps_y, steps_z, steps_a, steps_c, steps_e;  // Step count along each axis
   unsigned long step_event_count;           // The number of step events required to complete this block
   long accelerate_until;                    // The index of the step event on which to stop acceleration
   long decelerate_after;                    // The index of the step event on which to start decelerating
@@ -72,10 +72,10 @@ void plan_init();
 
 // Add a new linear movement to the buffer. x, y and z is the signed, absolute target position in
 // millimeters. Feed rate specifies the speed of the motion.
-void plan_buffer_line(const float &x, const float &y, const float &z, const float &e, float feed_rate, const uint8_t &extruder);
+void plan_buffer_line(const float &x, const float &y, const float &z, const float &a, const float &c, const float &e, float feed_rate, const uint8_t &extruder);
 
 // Set position. Used for G92 instructions.
-void plan_set_position(const float &x, const float &y, const float &z, const float &e);
+void plan_set_position(const float &x, const float &y, const float &z, const float &a, const float &c, const float &e);
 void plan_set_e_position(const float &e);
 
 

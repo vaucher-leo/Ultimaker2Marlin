@@ -134,6 +134,20 @@
   #else
     #define Z_HOME_POS Z_MAX_POS
   #endif //Z_HOME_DIR == -1
+
+// A axis
+  #if A_HOME_DIR == -1 //BED_CENTER_AT_0_0 not used
+    #define A_HOME_POS A_MIN_POS
+  #else
+    #define A_HOME_POS A_MAX_POS
+  #endif //Z_HOME_DIR == -1
+
+// C axis
+  #if C_HOME_DIR == -1 //BED_CENTER_AT_0_0 not used
+    #define C_HOME_POS C_MIN_POS
+  #else
+    #define C_HOME_POS C_MAX_POS
+  #endif //Z_HOME_DIR == -1
 #endif //End auto min/max positions
 //END AUTOSET LOCATIONS OF LIMIT SWITCHES -ZP
 
@@ -156,9 +170,11 @@
 #define X_HOME_RETRACT_MM 7
 #define Y_HOME_RETRACT_MM 7
 #define Z_HOME_RETRACT_MM 7
+#define A_HOME_RETRACT_MM 7
+#define C_HOME_RETRACT_MM 7
 #define QUICK_HOME  //if this is defined, if both x and y are to be homed, a diagonal move will be performed initially.
 
-#define AXIS_RELATIVE_MODES {false, false, false, false}
+#define AXIS_RELATIVE_MODES {false, false, false, false, false, false}
 
 #define MAX_STEP_FREQUENCY 40000 // Max step frequency for Ultimaker (5000 pps / half step)
 
@@ -166,6 +182,8 @@
 #define INVERT_X_STEP_PIN false
 #define INVERT_Y_STEP_PIN false
 #define INVERT_Z_STEP_PIN false
+#define INVERT_A_STEP_PIN false
+#define INVERT_C_STEP_PIN false
 #define INVERT_E_STEP_PIN false
 
 //default stepper release if idle

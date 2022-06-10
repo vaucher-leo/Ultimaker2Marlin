@@ -254,7 +254,7 @@ static void lcd_menu_maintenance_extrude()
         if (printing_state == PRINT_STATE_NORMAL && movesplanned() < 3)
         {
             current_position[E_AXIS] += lcd_lib_encoder_pos * 0.1;
-            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 10, active_extruder);
+            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[A_AXIS], current_position[C_AXIS], current_position[E_AXIS], 10, active_extruder);
             lcd_lib_encoder_pos = 0;
         }
     }

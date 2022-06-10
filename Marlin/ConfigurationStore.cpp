@@ -245,7 +245,7 @@ void Config_ResetDefault()
     float tmp1[]=DEFAULT_AXIS_STEPS_PER_UNIT;
     float tmp2[]=DEFAULT_MAX_FEEDRATE;
     long tmp3[]=DEFAULT_MAX_ACCELERATION;
-    for (uint8_t i=0; i<4; i++)
+    for (uint8_t i=0; i<6; i++)
     {
         axis_steps_per_unit[i]=tmp1[i];
         max_feedrate[i]=tmp2[i];
